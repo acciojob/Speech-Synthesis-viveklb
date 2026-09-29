@@ -2,42 +2,575 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Speech Synthesis</title>
-  <link href='https://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" href="style.css">
+
+  <link
+    href="https://fonts.googleapis.com/css?family=Pacifico"
+    rel="stylesheet"
+    type="text/css"
+  >
+
+  <style>
+    html {
+      font-size: 10px;
+      box-sizing: border-box;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: inherit;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background-color: #3BC1AC;
+
+      display: flex;
+      min-height: 100vh;
+      align-items: center;
+
+      background-image:
+        radial-gradient(
+          circle at 100% 150%,
+          #3BC1AC 24%,
+          #42D2BB 25%,
+          #42D2BB 28%,
+          #3BC1AC 29%,
+          #3BC1AC 36%,
+          #42D2BB 36%,
+          #42D2BB 40%,
+          transparent 40%,
+          transparent
+        ),
+        radial-gradient(
+          circle at 0 150%,
+          #3BC1AC 24%,
+          #42D2BB 25%,
+          #42D2BB 28%,
+          #3BC1AC 29%,
+          #3BC1AC 36%,
+          #42D2BB 36%,
+          #42D2BB 40%,
+          transparent 40%,
+          transparent
+        ),
+        radial-gradient(
+          circle at 50% 100%,
+          #42D2BB 10%,
+          #3BC1AC 11%,
+          #3BC1AC 23%,
+          #42D2BB 24%,
+          #42D2BB 30%,
+          #3BC1AC 31%,
+          #3BC1AC 43%,
+          #42D2BB 44%,
+          #42D2BB 50%,
+          #3BC1AC 51%,
+          #3BC1AC 63%,
+          #42D2BB 64%,
+          #42D2BB 71%,
+          transparent 71%,
+          transparent
+        ),
+        radial-gradient(
+          circle at 100% 50%,
+          #42D2BB 5%,
+          #3BC1AC 6%,
+          #3BC1AC 15%,
+          #42D2BB 16%,
+          #42D2BB 20%,
+          #3BC1AC 21%,
+          #3BC1AC 30%,
+          #42D2BB 31%,
+          #42D2BB 35%,
+          #3BC1AC 36%,
+          #3BC1AC 45%,
+          #42D2BB 46%,
+          #42D2BB 49%,
+          transparent 50%,
+          transparent
+        ),
+        radial-gradient(
+          circle at 0 50%,
+          #42D2BB 5%,
+          #3BC1AC 6%,
+          #3BC1AC 15%,
+          #42D2BB 16%,
+          #42D2BB 20%,
+          #3BC1AC 21%,
+          #3BC1AC 30%,
+          #42D2BB 31%,
+          #42D2BB 35%,
+          #3BC1AC 36%,
+          #3BC1AC 45%,
+          #42D2BB 46%,
+          #42D2BB 49%,
+          transparent 50%,
+          transparent
+        );
+
+      background-size: 100px 50px;
+    }
+
+    .voiceinator {
+      padding: 2rem;
+      width: 50rem;
+      max-width: 95%;
+      margin: 0 auto;
+      border-radius: 1rem;
+      position: relative;
+      background: white;
+      overflow: hidden;
+      z-index: 1;
+      box-shadow: 0 0 5px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      width: calc(100% + 4rem);
+      margin: -2rem 0 2rem -2rem;
+      padding: 0.5rem;
+      background: #ffc600;
+      border-bottom: 5px solid #F3C010;
+      text-align: center;
+      font-size: 5rem;
+      font-weight: 100;
+      font-family: 'Pacifico', cursive;
+      text-shadow: 3px 3px 0 #F3C010;
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+
+    .voiceinator input,
+    .voiceinator button,
+    .voiceinator select,
+    .voiceinator textarea {
+      width: 100%;
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      border: 0;
+      font-size: 2rem;
+      background: #F7F7F7;
+      outline: 0;
+    }
+
+    .voiceinator select,
+    .voiceinator textarea {
+      border: 1px solid #ddd;
+    }
+
+    textarea {
+      height: 20rem;
+      resize: vertical;
+    }
+
+    .voiceinator button {
+      background: #ffc600;
+      border: 0;
+      width: 49%;
+      float: left;
+      font-family: 'Pacifico', cursive;
+      margin-bottom: 0;
+      font-size: 2rem;
+      border-bottom: 5px solid #F3C010;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .voiceinator button:active {
+      top: 2px;
+    }
+
+    .voiceinator button:nth-of-type(1) {
+      margin-right: 2%;
+    }
+
+    #message {
+      clear: both;
+      padding-top: 15px;
+      font-size: 1.5rem;
+      text-align: center;
+    }
+  </style>
 </head>
+
 <body>
 
-    <div class="voiceinator">
+  <div class="voiceinator">
 
-      <h1>The Voiceinator 5000</h1>
+    <h1>The Voiceinator 5000</h1>
 
-      <select name="voice" id="voices">
-        <option value="">Select A Voice</option>
-      </select>
+    <select name="voice" id="voices">
+      <option value="">Select A Voice</option>
+    </select>
 
-      <label for="rate">Rate:</label>
-      <input name="rate" type="range" min="0" max="3" value="1" step="0.1">
+    <label for="rate">Rate:</label>
 
-      <label for="pitch">Pitch:</label>
+    <input
+      id="rate"
+      name="rate"
+      type="range"
+      min="0"
+      max="3"
+      value="1"
+      step="0.1"
+    >
 
-      <input name="pitch" type="range" min="0" max="2" step="0.1">
-      <textarea name="text">Hello! I love JavaScript 👍</textarea>
-      <button id="stop">Stop!</button>
-      <button id="speak">Speak</button>
+    <label for="pitch">Pitch:</label>
 
-    </div>
+    <input
+      id="pitch"
+      name="pitch"
+      type="range"
+      min="0"
+      max="2"
+      value="1"
+      step="0.1"
+    >
 
-<script>
-  const msg = new SpeechSynthesisUtterance();
-  let voices = [];
-  const voicesDropdown = document.querySelector('[name="voice"]');
-  const options = document.querySelectorAll('[type="range"], [name="text"]');
-  const speakButton = document.querySelector('#speak');
-  const stopButton = document.querySelector('#stop');
+    <textarea name="text">Hello! I love JavaScript 👍</textarea>
 
-  //Your code goes here
-</script>
+    <button id="stop">Stop!</button>
+
+    <button id="speak">Speak</button>
+
+    <div id="message"></div>
+
+  </div>
+
+
+  <script>
+    const synth = window.speechSynthesis;
+
+    let voices = [];
+    let currentUtterance = null;
+
+    const voicesDropdown =
+      document.querySelector('[name="voice"]');
+
+    const options =
+      document.querySelectorAll(
+        '[type="range"], [name="text"]'
+      );
+
+    const speakButton =
+      document.querySelector('#speak');
+
+    const stopButton =
+      document.querySelector('#stop');
+
+    const textArea =
+      document.querySelector('[name="text"]');
+
+    const rateInput =
+      document.querySelector('[name="rate"]');
+
+    const pitchInput =
+      document.querySelector('[name="pitch"]');
+
+    const message =
+      document.querySelector('#message');
+
+
+    /*
+      Load all voices available in the browser.
+    */
+    function populateVoices() {
+
+      voices = synth.getVoices();
+
+      voicesDropdown.innerHTML =
+        '<option value="">Select A Voice</option>';
+
+      if (voices.length === 0) {
+
+        message.textContent =
+          'No speech voices are currently available.';
+
+        return;
+      }
+
+      message.textContent = '';
+
+      voices.forEach((voice) => {
+
+        const option =
+          document.createElement('option');
+
+        option.value = voice.name;
+
+        option.textContent =
+          `${voice.name} (${voice.lang})`;
+
+        voicesDropdown.appendChild(option);
+
+      });
+
+    }
+
+
+    /*
+      Create a fresh SpeechSynthesisUtterance
+      every time speech starts.
+
+      This is more reliable than repeatedly
+      reusing the same utterance object.
+    */
+    function createUtterance() {
+
+      const text =
+        textArea.value.trim();
+
+      if (!text) {
+        return null;
+      }
+
+      const utterance =
+        new SpeechSynthesisUtterance(text);
+
+      utterance.rate =
+        Number(rateInput.value);
+
+      utterance.pitch =
+        Number(pitchInput.value);
+
+
+      const selectedVoice =
+        voices.find(
+          voice =>
+            voice.name ===
+            voicesDropdown.value
+        );
+
+      if (selectedVoice) {
+        utterance.voice =
+          selectedVoice;
+      }
+
+
+      utterance.onstart = function () {
+        message.textContent =
+          'Speaking...';
+      };
+
+
+      utterance.onend = function () {
+        message.textContent = '';
+      };
+
+
+      utterance.onerror = function (event) {
+
+        /*
+          "interrupted" and "canceled" are expected
+          when the user presses Stop or changes
+          speech settings.
+        */
+        if (
+          event.error !== 'interrupted' &&
+          event.error !== 'canceled'
+        ) {
+          message.textContent =
+            'Speech could not be started.';
+        }
+
+      };
+
+      return utterance;
+    }
+
+
+    /*
+      Main Start / Stop function.
+    */
+    function toggle(startOver = true) {
+
+      /*
+        STOP SPEECH
+      */
+      if (startOver === false) {
+
+        synth.cancel();
+
+        currentUtterance = null;
+
+        message.textContent = '';
+
+        return;
+      }
+
+
+      /*
+        Prevent empty text.
+      */
+      const text =
+        textArea.value.trim();
+
+      if (!text) {
+
+        message.textContent =
+          'Please enter some text first.';
+
+        return;
+      }
+
+
+      /*
+        Stop previous speech before
+        starting another one.
+      */
+      if (
+        synth.speaking ||
+        synth.pending
+      ) {
+
+        synth.cancel();
+
+      }
+
+
+      currentUtterance =
+        createUtterance();
+
+
+      if (!currentUtterance) {
+        return;
+      }
+
+
+      /*
+        Small delay after cancel() avoids
+        Chrome speech synthesis race conditions.
+      */
+      setTimeout(function () {
+
+        synth.speak(
+          currentUtterance
+        );
+
+      }, 50);
+
+    }
+
+
+    /*
+      Restart when selected voice changes.
+    */
+    function setVoice() {
+
+      if (
+        synth.speaking ||
+        synth.pending
+      ) {
+        toggle(true);
+      }
+
+    }
+
+
+    /*
+      Update speech whenever the rate or
+      pitch control changes.
+    */
+    function setOption() {
+
+      if (
+        this.name === 'rate' ||
+        this.name === 'pitch'
+      ) {
+
+        if (
+          synth.speaking ||
+          synth.pending
+        ) {
+          toggle(true);
+        }
+
+      }
+
+    }
+
+
+    /*
+      Initial voice loading.
+    */
+    populateVoices();
+
+
+    /*
+      Chrome often loads voices asynchronously,
+      so listen for voiceschanged.
+    */
+    if (
+      'onvoiceschanged' in synth
+    ) {
+
+      synth.addEventListener(
+        'voiceschanged',
+        populateVoices
+      );
+
+    }
+
+
+    /*
+      Voice selector.
+    */
+    voicesDropdown.addEventListener(
+      'change',
+      setVoice
+    );
+
+
+    /*
+      Rate and Pitch controls.
+    */
+    options.forEach(function (option) {
+
+      option.addEventListener(
+        'change',
+        setOption
+      );
+
+    });
+
+
+    /*
+      START SPEECH
+    */
+    speakButton.addEventListener(
+      'click',
+      function () {
+
+        toggle(true);
+
+      }
+    );
+
+
+    /*
+      STOP SPEECH
+    */
+    stopButton.addEventListener(
+      'click',
+      function () {
+
+        toggle(false);
+
+      }
+    );
+
+  </script>
 
 </body>
 </html>
