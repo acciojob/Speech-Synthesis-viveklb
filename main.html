@@ -19,8 +19,8 @@
     }
 
     *,
-    *::before,
-    *::after {
+    *:before,
+    *:after {
       box-sizing: inherit;
     }
 
@@ -35,8 +35,7 @@
       align-items: center;
 
       background-image:
-        radial-gradient(
-          circle at 100% 150%,
+        radial-gradient(circle at 100% 150%,
           #3BC1AC 24%,
           #42D2BB 25%,
           #42D2BB 28%,
@@ -45,10 +44,9 @@
           #42D2BB 36%,
           #42D2BB 40%,
           transparent 40%,
-          transparent
-        ),
-        radial-gradient(
-          circle at 0 150%,
+          transparent),
+
+        radial-gradient(circle at 0 150%,
           #3BC1AC 24%,
           #42D2BB 25%,
           #42D2BB 28%,
@@ -57,10 +55,9 @@
           #42D2BB 36%,
           #42D2BB 40%,
           transparent 40%,
-          transparent
-        ),
-        radial-gradient(
-          circle at 50% 100%,
+          transparent),
+
+        radial-gradient(circle at 50% 100%,
           #42D2BB 10%,
           #3BC1AC 11%,
           #3BC1AC 23%,
@@ -75,10 +72,9 @@
           #42D2BB 64%,
           #42D2BB 71%,
           transparent 71%,
-          transparent
-        ),
-        radial-gradient(
-          circle at 100% 50%,
+          transparent),
+
+        radial-gradient(circle at 100% 50%,
           #42D2BB 5%,
           #3BC1AC 6%,
           #3BC1AC 15%,
@@ -93,10 +89,9 @@
           #42D2BB 46%,
           #42D2BB 49%,
           transparent 50%,
-          transparent
-        ),
-        radial-gradient(
-          circle at 0 50%,
+          transparent),
+
+        radial-gradient(circle at 0 50%,
           #42D2BB 5%,
           #3BC1AC 6%,
           #3BC1AC 15%,
@@ -111,8 +106,7 @@
           #42D2BB 46%,
           #42D2BB 49%,
           transparent 50%,
-          transparent
-        );
+          transparent);
 
       background-size: 100px 50px;
     }
@@ -134,8 +128,10 @@
       width: calc(100% + 4rem);
       margin: -2rem 0 2rem -2rem;
       padding: 0.5rem;
+
       background: #ffc600;
       border-bottom: 5px solid #F3C010;
+
       text-align: center;
       font-size: 5rem;
       font-weight: 100;
@@ -144,8 +140,6 @@
     }
 
     label {
-      display: block;
-      margin-top: 1rem;
       font-size: 1.8rem;
       font-weight: bold;
     }
@@ -164,11 +158,6 @@
       outline: 0;
     }
 
-    .voiceinator select,
-    .voiceinator textarea {
-      border: 1px solid #ddd;
-    }
-
     textarea {
       height: 20rem;
       resize: vertical;
@@ -179,9 +168,11 @@
       border: 0;
       width: 49%;
       float: left;
+
       font-family: 'Pacifico', cursive;
       margin-bottom: 0;
       font-size: 2rem;
+
       border-bottom: 5px solid #F3C010;
       cursor: pointer;
       position: relative;
@@ -198,8 +189,8 @@
     #message {
       clear: both;
       padding-top: 15px;
-      font-size: 1.5rem;
       text-align: center;
+      font-size: 1.6rem;
     }
   </style>
 </head>
@@ -241,7 +232,6 @@
     <textarea name="text">Hello! I love JavaScript 👍</textarea>
 
     <button id="stop">Stop!</button>
-
     <button id="speak">Speak</button>
 
     <div id="message"></div>
@@ -250,10 +240,11 @@
 
 
   <script>
-    const synth = window.speechSynthesis;
+    const msg = new SpeechSynthesisUtterance();
 
     let voices = [];
-    let currentUtterance = null;
+
+    const synth = window.speechSynthesis;
 
     const voicesDropdown =
       document.querySelector('[name="voice"]');
@@ -283,7 +274,7 @@
 
 
     /*
-      Load all voices available in the browser.
+      LOAD VOICES
     */
     function populateVoices() {
 
@@ -295,14 +286,14 @@
       if (voices.length === 0) {
 
         message.textContent =
-          'No speech voices are currently available.';
+          'No voices available.';
 
         return;
       }
 
       message.textContent = '';
 
-      voices.forEach((voice) => {
+      voices.forEach(function (voice) {
 
         const option =
           document.createElement('option');
@@ -320,154 +311,19 @@
 
 
     /*
-      Create a fresh SpeechSynthesisUtterance
-      every time speech starts.
-
-      This is more reliable than repeatedly
-      reusing the same utterance object.
-    */
-    function createUtterance() {
-
-      const text =
-        textArea.value.trim();
-
-      if (!text) {
-        return null;
-      }
-
-      const utterance =
-        new SpeechSynthesisUtterance(text);
-
-      utterance.rate =
-        Number(rateInput.value);
-
-      utterance.pitch =
-        Number(pitchInput.value);
-
-
-      const selectedVoice =
-        voices.find(
-          voice =>
-            voice.name ===
-            voicesDropdown.value
-        );
-
-      if (selectedVoice) {
-        utterance.voice =
-          selectedVoice;
-      }
-
-
-      utterance.onstart = function () {
-        message.textContent =
-          'Speaking...';
-      };
-
-
-      utterance.onend = function () {
-        message.textContent = '';
-      };
-
-
-      utterance.onerror = function (event) {
-
-        /*
-          "interrupted" and "canceled" are expected
-          when the user presses Stop or changes
-          speech settings.
-        */
-        if (
-          event.error !== 'interrupted' &&
-          event.error !== 'canceled'
-        ) {
-          message.textContent =
-            'Speech could not be started.';
-        }
-
-      };
-
-      return utterance;
-    }
-
-
-    /*
-      Main Start / Stop function.
-    */
-    function toggle(startOver = true) {
-
-      /*
-        STOP SPEECH
-      */
-      if (startOver === false) {
-
-        synth.cancel();
-
-        currentUtterance = null;
-
-        message.textContent = '';
-
-        return;
-      }
-
-
-      /*
-        Prevent empty text.
-      */
-      const text =
-        textArea.value.trim();
-
-      if (!text) {
-
-        message.textContent =
-          'Please enter some text first.';
-
-        return;
-      }
-
-
-      /*
-        Stop previous speech before
-        starting another one.
-      */
-      if (
-        synth.speaking ||
-        synth.pending
-      ) {
-
-        synth.cancel();
-
-      }
-
-
-      currentUtterance =
-        createUtterance();
-
-
-      if (!currentUtterance) {
-        return;
-      }
-
-
-      /*
-        Small delay after cancel() avoids
-        Chrome speech synthesis race conditions.
-      */
-      setTimeout(function () {
-
-        synth.speak(
-          currentUtterance
-        );
-
-      }, 50);
-
-    }
-
-
-    /*
-      Restart when selected voice changes.
+      SET SELECTED VOICE
     */
     function setVoice() {
 
+      msg.voice = voices.find(
+        voice =>
+          voice.name === this.value
+      ) || null;
+
+      /*
+        Restart only when speech is
+        currently active.
+      */
       if (
         synth.speaking ||
         synth.pending
@@ -479,21 +335,130 @@
 
 
     /*
-      Update speech whenever the rate or
-      pitch control changes.
+      START / STOP SPEECH
     */
-    function setOption() {
+    function toggle(startOver = true) {
 
+      /*
+        STOP
+      */
+      if (startOver === false) {
+
+        synth.cancel();
+
+        message.textContent = '';
+
+        return;
+      }
+
+
+      /*
+        IMPORTANT FIX:
+        Refresh voices before attempting
+        to start speech.
+      */
+      voices = synth.getVoices();
+
+
+      /*
+        If no voice exists, STOP here.
+
+        speechSynthesis.speak() will NOT
+        be called.
+      */
+      if (voices.length === 0) {
+
+        synth.cancel();
+
+        message.textContent =
+          'No voices available.';
+
+        return;
+      }
+
+
+      /*
+        Check text.
+      */
+      const text =
+        textArea.value.trim();
+
+      if (text === '') {
+
+        message.textContent =
+          'Please enter some text.';
+
+        return;
+      }
+
+
+      /*
+        Set utterance values.
+      */
+      msg.text = text;
+
+      msg.rate =
+        Number(rateInput.value);
+
+      msg.pitch =
+        Number(pitchInput.value);
+
+
+      /*
+        Set currently selected voice.
+      */
+      if (voicesDropdown.value) {
+
+        const selectedVoice =
+          voices.find(
+            voice =>
+              voice.name ===
+              voicesDropdown.value
+          );
+
+        if (selectedVoice) {
+          msg.voice = selectedVoice;
+        }
+
+      }
+
+
+      /*
+        Stop old speech if necessary.
+      */
       if (
-        this.name === 'rate' ||
-        this.name === 'pitch'
+        synth.speaking ||
+        synth.pending
       ) {
 
-        if (
-          synth.speaking ||
-          synth.pending
-        ) {
-          toggle(true);
+        synth.cancel();
+
+        setTimeout(function () {
+
+          /*
+            Check voices again before speak.
+          */
+          if (synth.getVoices().length > 0) {
+
+            synth.speak(msg);
+
+            message.textContent =
+              'Speaking...';
+          }
+
+        }, 50);
+
+      } else {
+
+        /*
+          Speak only if voices are available.
+        */
+        if (synth.getVoices().length > 0) {
+
+          synth.speak(msg);
+
+          message.textContent =
+            'Speaking...';
         }
 
       }
@@ -502,29 +467,75 @@
 
 
     /*
-      Initial voice loading.
+      RATE / PITCH UPDATE
     */
-    populateVoices();
+    function setOption() {
+
+      if (this.name === 'rate') {
+
+        msg.rate =
+          Number(this.value);
+
+      }
+
+      else if (this.name === 'pitch') {
+
+        msg.pitch =
+          Number(this.value);
+
+      }
+
+      else if (this.name === 'text') {
+
+        msg.text =
+          this.value;
+
+      }
 
 
-    /*
-      Chrome often loads voices asynchronously,
-      so listen for voiceschanged.
-    */
-    if (
-      'onvoiceschanged' in synth
-    ) {
+      /*
+        Restart if currently speaking.
+      */
+      if (
+        (this.name === 'rate' ||
+         this.name === 'pitch') &&
+        (synth.speaking ||
+         synth.pending)
+      ) {
 
-      synth.addEventListener(
-        'voiceschanged',
-        populateVoices
-      );
+        toggle(true);
+
+      }
 
     }
 
 
     /*
-      Voice selector.
+      INITIAL VALUES
+    */
+    msg.text = textArea.value;
+    msg.rate = Number(rateInput.value);
+    msg.pitch = Number(pitchInput.value);
+
+
+    /*
+      LOAD VOICES
+    */
+    populateVoices();
+
+
+    /*
+      Voices are loaded asynchronously
+      in browsers such as Chrome.
+    */
+    synth.addEventListener(
+      'voiceschanged',
+      populateVoices
+    );
+
+
+    /*
+      VOICE CHANGE
     */
     voicesDropdown.addEventListener(
       'change',
@@ -533,7 +544,7 @@
 
 
     /*
-      Rate and Pitch controls.
+      RATE, PITCH AND TEXT
     */
     options.forEach(function (option) {
 
@@ -546,7 +557,7 @@
 
 
     /*
-      START SPEECH
+      SPEAK
     */
     speakButton.addEventListener(
       'click',
@@ -559,7 +570,7 @@
 
 
     /*
-      STOP SPEECH
+      STOP
     */
     stopButton.addEventListener(
       'click',
