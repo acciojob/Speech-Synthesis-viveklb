@@ -35,7 +35,8 @@
       align-items: center;
 
       background-image:
-        radial-gradient(circle at 100% 150%,
+        radial-gradient(
+          circle at 100% 150%,
           #3BC1AC 24%,
           #42D2BB 25%,
           #42D2BB 28%,
@@ -44,9 +45,11 @@
           #42D2BB 36%,
           #42D2BB 40%,
           transparent 40%,
-          transparent),
+          transparent
+        ),
 
-        radial-gradient(circle at 0 150%,
+        radial-gradient(
+          circle at 0 150%,
           #3BC1AC 24%,
           #42D2BB 25%,
           #42D2BB 28%,
@@ -55,9 +58,11 @@
           #42D2BB 36%,
           #42D2BB 40%,
           transparent 40%,
-          transparent),
+          transparent
+        ),
 
-        radial-gradient(circle at 50% 100%,
+        radial-gradient(
+          circle at 50% 100%,
           #42D2BB 10%,
           #3BC1AC 11%,
           #3BC1AC 23%,
@@ -72,9 +77,11 @@
           #42D2BB 64%,
           #42D2BB 71%,
           transparent 71%,
-          transparent),
+          transparent
+        ),
 
-        radial-gradient(circle at 100% 50%,
+        radial-gradient(
+          circle at 100% 50%,
           #42D2BB 5%,
           #3BC1AC 6%,
           #3BC1AC 15%,
@@ -89,9 +96,11 @@
           #42D2BB 46%,
           #42D2BB 49%,
           transparent 50%,
-          transparent),
+          transparent
+        ),
 
-        radial-gradient(circle at 0 50%,
+        radial-gradient(
+          circle at 0 50%,
           #42D2BB 5%,
           #3BC1AC 6%,
           #3BC1AC 15%,
@@ -106,7 +115,8 @@
           #42D2BB 46%,
           #42D2BB 49%,
           transparent 50%,
-          transparent);
+          transparent
+        );
 
       background-size: 100px 50px;
     }
@@ -140,8 +150,9 @@
     }
 
     label {
-      font-size: 1.8rem;
-      font-weight: bold;
+      font-size: 1.5rem;
+      display: block;
+      margin-top: 1rem;
     }
 
     .voiceinator input,
@@ -188,9 +199,9 @@
 
     #message {
       clear: both;
-      padding-top: 15px;
+      padding-top: 12px;
       text-align: center;
-      font-size: 1.6rem;
+      font-size: 1.5rem;
     }
   </style>
 </head>
@@ -243,6 +254,7 @@
     const msg = new SpeechSynthesisUtterance();
 
     let voices = [];
+    let voiceLoadAttempts = 0;
 
     const synth = window.speechSynthesis;
 
@@ -274,63 +286,114 @@
 
 
     /*
-      LOAD VOICES
+      POPULATE VOICES
     */
     function populateVoices() {
 
       voices = synth.getVoices();
 
-      voicesDropdown.innerHTML =
-        '<option value="">Select A Voice</option>';
-
+      /*
+        Browser may return [] initially.
+        Retry a few times because voices can
+        load asynchronously.
+      */
       if (voices.length === 0) {
 
-        message.textContent =
-          'No voices available.';
+        voicesDropdown.innerHTML =
+          '<option value="">Select A Voice</option>';
+
+        if (voiceLoadAttempts < 10) {
+
+          voiceLoadAttempts++;
+
+          setTimeout(
+            populateVoices,
+            100
+          );
+
+        } else {
+
+          message.textContent =
+            'No voices available.';
+
+        }
 
         return;
       }
 
+
+      /*
+        Voices were successfully loaded.
+      */
+      voiceLoadAttempts = 0;
+
       message.textContent = '';
 
-      voices.forEach(function (voice) {
 
-        const option =
-          document.createElement('option');
+      /*
+        Dynamically create all voice options.
+      */
+      voicesDropdown.innerHTML =
+        voices.map(function (voice) {
 
-        option.value = voice.name;
+          return `
+            <option value="${voice.name}">
+              ${voice.name} (${voice.lang})
+            </option>
+          `;
 
-        option.textContent =
-          `${voice.name} (${voice.lang})`;
+        }).join('');
 
-        voicesDropdown.appendChild(option);
 
-      });
+      /*
+        Select the first available voice.
+      */
+      if (voices.length > 0) {
 
+        voicesDropdown.value =
+          voices[0].name;
+
+        msg.voice =
+          voices[0];
+
+      }
     }
 
 
     /*
-      SET SELECTED VOICE
+      CHANGE VOICE
     */
     function setVoice() {
 
-      msg.voice = voices.find(
-        voice =>
-          voice.name === this.value
-      ) || null;
+      const selectedVoice =
+        voices.find(function (voice) {
+
+          return voice.name ===
+            voicesDropdown.value;
+
+        });
+
+
+      if (selectedVoice) {
+
+        msg.voice =
+          selectedVoice;
+
+      }
+
 
       /*
-        Restart only when speech is
-        currently active.
+        If speaking, restart using
+        the newly selected voice.
       */
       if (
         synth.speaking ||
         synth.pending
       ) {
-        toggle(true);
-      }
 
+        toggle(true);
+
+      }
     }
 
 
@@ -340,7 +403,7 @@
     function toggle(startOver = true) {
 
       /*
-        STOP
+        STOP SPEECH
       */
       if (startOver === false) {
 
@@ -353,22 +416,20 @@
 
 
       /*
-        IMPORTANT FIX:
-        Refresh voices before attempting
-        to start speech.
+        Get the most recent voice list.
       */
-      voices = synth.getVoices();
+      const availableVoices =
+        synth.getVoices();
 
 
       /*
-        If no voice exists, STOP here.
-
-        speechSynthesis.speak() will NOT
-        be called.
+        IMPORTANT:
+        Do not call speak() when
+        no voices exist.
       */
-      if (voices.length === 0) {
+      if (availableVoices.length === 0) {
 
-        synth.cancel();
+        voices = [];
 
         message.textContent =
           'No voices available.';
@@ -378,12 +439,20 @@
 
 
       /*
-        Check text.
+        Synchronize our voice array.
+      */
+      voices =
+        availableVoices;
+
+
+      /*
+        Validate text.
       */
       const text =
         textArea.value.trim();
 
-      if (text === '') {
+
+      if (!text) {
 
         message.textContent =
           'Please enter some text.';
@@ -393,9 +462,10 @@
 
 
       /*
-        Set utterance values.
+        Set speech properties.
       */
-      msg.text = text;
+      msg.text =
+        textArea.value;
 
       msg.rate =
         Number(rateInput.value);
@@ -405,26 +475,32 @@
 
 
       /*
-        Set currently selected voice.
+        Set selected voice.
       */
-      if (voicesDropdown.value) {
+      const selectedVoice =
+        voices.find(function (voice) {
 
-        const selectedVoice =
-          voices.find(
-            voice =>
-              voice.name ===
-              voicesDropdown.value
-          );
+          return voice.name ===
+            voicesDropdown.value;
 
-        if (selectedVoice) {
-          msg.voice = selectedVoice;
-        }
+        });
+
+
+      if (selectedVoice) {
+
+        msg.voice =
+          selectedVoice;
+
+      } else {
+
+        msg.voice =
+          voices[0];
 
       }
 
 
       /*
-        Stop old speech if necessary.
+        Stop previous speech first.
       */
       if (
         synth.speaking ||
@@ -433,41 +509,38 @@
 
         synth.cancel();
 
+
         setTimeout(function () {
 
           /*
-            Check voices again before speak.
+            One more safety check.
           */
-          if (synth.getVoices().length > 0) {
+          if (
+            synth.getVoices().length > 0
+          ) {
 
             synth.speak(msg);
 
             message.textContent =
               'Speaking...';
+
           }
 
         }, 50);
 
       } else {
 
-        /*
-          Speak only if voices are available.
-        */
-        if (synth.getVoices().length > 0) {
+        synth.speak(msg);
 
-          synth.speak(msg);
-
-          message.textContent =
-            'Speaking...';
-        }
+        message.textContent =
+          'Speaking...';
 
       }
-
     }
 
 
     /*
-      RATE / PITCH UPDATE
+      RATE / PITCH / TEXT CHANGES
     */
     function setOption() {
 
@@ -494,39 +567,49 @@
 
 
       /*
-        Restart if currently speaking.
+        Restart speech when rate or
+        pitch changes while speaking.
       */
       if (
-        (this.name === 'rate' ||
-         this.name === 'pitch') &&
-        (synth.speaking ||
-         synth.pending)
+        (
+          this.name === 'rate' ||
+          this.name === 'pitch'
+        ) &&
+        (
+          synth.speaking ||
+          synth.pending
+        )
       ) {
 
         toggle(true);
 
       }
-
     }
 
 
     /*
       INITIAL VALUES
     */
-    msg.text = textArea.value;
-    msg.rate = Number(rateInput.value);
-    msg.pitch = Number(pitchInput.value);
+    msg.text =
+      textArea.value;
+
+    msg.rate =
+      Number(rateInput.value);
+
+    msg.pitch =
+      Number(pitchInput.value);
 
 
     /*
-      LOAD VOICES
+      VERY IMPORTANT:
+      Try to load voices immediately.
     */
     populateVoices();
 
 
     /*
-      Voices are loaded asynchronously
-      in browsers such as Chrome.
+      Also populate whenever the
+      browser announces new voices.
     */
     synth.addEventListener(
       'voiceschanged',
@@ -535,7 +618,7 @@
 
 
     /*
-      VOICE CHANGE
+      Voice selector.
     */
     voicesDropdown.addEventListener(
       'change',
@@ -544,7 +627,7 @@
 
 
     /*
-      RATE, PITCH AND TEXT
+      Rate, pitch and textarea.
     */
     options.forEach(function (option) {
 
