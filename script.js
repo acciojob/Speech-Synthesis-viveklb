@@ -3,23 +3,21 @@
   let voices = [];
 
   const voicesDropdown = document.querySelector('[name="voice"]');
-  const options = document.querySelectorAll('[type="range"], [name="text"]');
+  const options = document.querySelectorAll(
+    '[type="range"], [name="text"]'
+  );
   const speakButton = document.querySelector('#speak');
   const stopButton = document.querySelector('#stop');
+  const textArea = document.querySelector('[name="text"]');
 
-  // Load available voices
+  // Initial text
+  msg.text = textArea.value;
+
   function populateVoices() {
     voices = window.speechSynthesis.getVoices();
 
-    voicesDropdown.innerHTML = '';
-
-    if (voices.length === 0) {
-      const option = document.createElement('option');
-      option.textContent = 'No voices available';
-      option.value = '';
-      voicesDropdown.appendChild(option);
-      return;
-    }
+    voicesDropdown.innerHTML =
+      '<option value="">Select A Voice</option>';
 
     voices.forEach((voice) => {
       const option = document.createElement('option');
@@ -29,52 +27,43 @@
 
       voicesDropdown.appendChild(option);
     });
-
-    msg.voice = voices[0];
   }
 
-  // Select voice
   function setVoice() {
     msg.voice = voices.find(
-      (voice) => voice.name === voicesDropdown.value
+      voice => voice.name === this.value
     );
 
     toggle();
   }
 
-  // Update rate, pitch or text
-  function setOption() {
-    msg[this.name] = this.value;
+  function toggle(startOver = true) {
+    window.speechSynthesis.cancel();
 
+    if (startOver && msg.text.trim() !== '') {
+      window.speechSynthesis.speak(msg);
+    }
+  }
+
+  function setOption() {
+    // Rate and pitch MUST be numbers
+    if (this.name === 'rate') {
+      msg.rate = Number(this.value);
+    } 
+    else if (this.name === 'pitch') {
+      msg.pitch = Number(this.value);
+    } 
+    else if (this.name === 'text') {
+      msg.text = this.value;
+    }
+
+    // Restart with updated settings if speaking
     if (window.speechSynthesis.speaking) {
       toggle();
     }
   }
 
-  // Speak text
-  function toggle(startOver = true) {
-    window.speechSynthesis.cancel();
-
-    if (!startOver) {
-      return;
-    }
-
-    const text = document.querySelector('[name="text"]').value.trim();
-
-    if (text === '') {
-      return;
-    }
-
-    msg.text = text;
-
-    if (voices.length > 0 && !msg.voice) {
-      msg.voice = voices[0];
-    }
-
-    window.speechSynthesis.speak(msg);
-  }
-
-  // Get voices
+  // Load voices
   populateVoices();
 
   window.speechSynthesis.addEventListener(
@@ -82,20 +71,25 @@
     populateVoices
   );
 
-  // Voice change
+  // Voice selector
   voicesDropdown.addEventListener('change', setVoice);
 
-  // Rate, pitch and text changes
-  options.forEach((option) => {
+  // Dynamically update rate and pitch
+  options.forEach(option => {
+    option.addEventListener('input', setOption);
     option.addEventListener('change', setOption);
   });
 
-  // Speak button
+  // Speak
   speakButton.addEventListener('click', function () {
-    toggle();
+    msg.text = textArea.value;
+
+    if (msg.text.trim() !== '') {
+      toggle();
+    }
   });
 
-  // Stop button
+  // Stop
   stopButton.addEventListener('click', function () {
     toggle(false);
   });
